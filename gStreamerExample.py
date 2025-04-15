@@ -17,13 +17,13 @@ def gstream(folder, frame_limit, dual):
     
     # GStreamer pipelines to capture video frames and portentially display with Wayland
     single_pipeline_description = """
-    v4l2src device=/dev/video2 ! videoconvert !
-    video/x-raw, framerate=5/1, width=640, height=512, format=I420 !
+    v4l2src device=/dev/video0 ! videoconvert !
+    video/x-raw, framerate=60/1, width=640, height=512, format=I420 !
     appsink name=sink 
     """
     
     dual_pipeline_description = """
-    v4l2src device=/dev/video2 ! videoconvert ! 
+    v4l2src device=/dev/video0 ! videoconvert ! 
     video/x-raw, format=I420, width=640, height=512 ! tee name=t
     t. ! queue max-size-buffers=10 ! waylandsink fullscreen=true
     t. ! queue max-size-buffers=10 ! appsink name=sink 
