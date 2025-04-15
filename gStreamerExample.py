@@ -18,7 +18,7 @@ def gstream(folder, frame_limit, dual):
     # GStreamer pipelines to capture video frames and portentially display with Wayland
     single_pipeline_description = """
     v4l2src device=/dev/video0 ! videoconvert !
-    video/x-raw, framerate=60/1, width=640, height=512 !
+    video/x-raw, framerate=60/1, width=640, height=512, format=GRAY_16LE !
     appsink name=sink 
     """
     
@@ -79,7 +79,7 @@ def gstream(folder, frame_limit, dual):
             (height * 3 // 2, width)
         )
         buf.unmap(map_info)
-        print("gathered data")
+        
         # Process the frame
         frame_buff.append(frame_data)
         frame_count += 1
