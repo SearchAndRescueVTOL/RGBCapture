@@ -44,7 +44,7 @@ def gstream(folder, frame_limit, dual):
     
     # Start the pipeline
     pipeline.set_state(Gst.State.PLAYING)
-    
+    print("pipeline started\n")
     # Set variables
     folder = folder
     os.makedirs(folder, exist_ok=True)
