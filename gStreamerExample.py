@@ -1,3 +1,5 @@
+# gst-launch-1.0 v4l2src device=/dev/video0 ! video/x-raw,format=GRAY16_LE,width=640,height=512 ! videoconvert ! autovideosink
+
 import numpy as np
 import tifffile
 import threading
