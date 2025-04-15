@@ -1,5 +1,5 @@
 import numpy as np
-import tifffile
+import av
 import threading
 import sys
 import time
@@ -8,47 +8,32 @@ import os
 import gi
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib
-from SDK_USER_PERMISSIONS import *
- 
 def gstream(folder, frame_limit, dual):
-    myCam = CamAPI.pyClient(manualport="/dev/ttyACM0")
-    myCam.bosonSetGainMode(FLR_BOSON_GAINMODE_E.FLR_BOSON_HIGH_GAIN)
-    myCam.TLinearSetControl(FLR_ENABLE_E.FLR_ENABLE)
-    myCam.sysctrlSetUsbVideoIR16Mode(
-        FLR_SYSCTRL_USBIR16_MODE_E.FLR_SYSCTRL_USBIR16_MODE_TLINEAR
-    )
-    myCam.radiometrySetTransmissionWindow(1.00)
-    myCam.TLinearRefreshLUT(FLR_BOSON_GAINMODE_E.FLR_BOSON_HIGH_GAIN)
-    myCam.bosonRunFFC()
-    myCam.Close()
-    
-    # Wait for the camera to close
-    time.sleep(3)
-    
+  
     # Initialize GStreamer
     Gst.init(None)
+    time.sleep(3)
     print("GStreamer initializing...")
     
     # GStreamer pipelines to capture video frames and portentially display with Wayland
     single_pipeline_description = """
     v4l2src device=/dev/video2 ! videoconvert !
-    video/x-raw, framerate=60/1, width=640, height=512, format=GRAY16_LE !
+    video/x-raw, framerate=60/1, width=640, height=512, format=I420 !
     appsink name=sink 
     """
     
     dual_pipeline_description = """
     v4l2src device=/dev/video2 ! videoconvert ! 
-    video/x-raw, format=GRAY16_LE, width=640, height=512 ! tee name=t
-    t. ! queue max-size-buffers=10 ! videoconvert ! waylandsink fullscreen=true
+    video/x-raw, format=I420, width=640, height=512 ! tee name=t
+    t. ! queue max-size-buffers=10 ! waylandsink fullscreen=true
     t. ! queue max-size-buffers=10 ! appsink name=sink 
     """
     
     # Create GStreamer pipeline
-    if dual.lower() == 'true' or dual.lower() == 't':
+    if dual.lower() == "true" or dual.lower() == "t":
         pipeline = Gst.parse_launch(dual_pipeline_description)
     else:
         pipeline = Gst.parse_launch(single_pipeline_description)
-        
     appsink = pipeline.get_by_name("sink")
     
     # Configure appsink properties
@@ -71,6 +56,7 @@ def gstream(folder, frame_limit, dual):
     frame_buff = []
     
     def on_new_sample(sink):
+    
         global frame_count
         sample = sink.emit("pull-sample")
         
@@ -89,8 +75,11 @@ def gstream(folder, frame_limit, dual):
             return Gst.FlowReturn.ERROR
             
         # Convert buffer to numpy array
-        frame_data = np.frombuffer(map_info.data, np.uint16).reshape((height, width))
+        frame_data = np.frombuffer(map_info.data, np.uint8).reshape(
+            (height * 3 // 2, width)
+        )
         buf.unmap(map_info)
+        
         # Process the frame
         frame_buff.append(frame_data)
         frame_count += 1
@@ -106,18 +95,36 @@ def gstream(folder, frame_limit, dual):
         
     # Connect the appsink to the new-sample signal
     appsink.connect("new-sample", on_new_sample)
+    
     # Start the pipeline
     pipeline.set_state(Gst.State.PLAYING)
     start_time = time.perf_counter()
     
+    # Convert from I420 to h264
+    def write_video_pyav(frames, output_file):
+        container = av.open(output_file, mode="w")
+        stream = container.add_stream("h264", rate=60)
+        stream.pix_fmt = "yuv420p"
+        stream.bit_rate = 4000000
+        for frame in frames:
+            frame_av = av.VideoFrame.from_ndarray(frame, format="yuv420p")
+            packet = stream.encode(frame_av)
+            if packet:
+                container.mux(packet)
+        container.close()
+        
     # Run GStreamer's main loop in a separate thread
     def gstreamer_loop():
+    
         global main_loop
         main_loop = GLib.MainLoop()
+        
         try:
             main_loop.run()
+            
         except Exception as e:
             print(f"Error in GStreamer loop: {e}")
+            
         finally:
             print("Gstreamer loop stopped")
             
@@ -128,6 +135,7 @@ def gstream(folder, frame_limit, dual):
     # Graceful shutdown handler
     def signal_handler(sig, frame):
         """Handles termination signals (Ctr+C) and stops the pipeline safely."""
+        
         print("\nStopping pipeline gracefully...")
         
         stop_event.set()
@@ -135,10 +143,10 @@ def gstream(folder, frame_limit, dual):
         
         if main_loop:
             main_loop.quit()
-        gsreamer_thread.join()
-        
+            
+        gstreamer_thread.join()
         print("Pipeline stopped successfully. Exiting...")
-       
+        
     # Register the signal handler
     signal.signal(signal.SIGINT, signal_handler)
     
@@ -150,11 +158,11 @@ def gstream(folder, frame_limit, dual):
         signal_handler(None, None)
     finally:
         end_time = time.perf_counter()
+        save_path = os.path.join(folder, "output.mp4")
         
-        save_path = os.path.join(folder, "frames.tiff")
-        tifffile.imwrite(save_path, np.array(frame_buff))
+        write_video_pyav(frame_buff, save_path)
+        print(f"Saved {frame_count} frames as a video.")
         
-        print(f"Saved {frame_count} frames to {folder}.")
         execution_time = end_time - start_time
         print(f"Execution time: {execution_time} seconds")
         os._exit(0)
