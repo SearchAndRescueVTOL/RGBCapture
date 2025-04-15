@@ -99,7 +99,7 @@ def gstream(folder, frame_limit, dual):
     # Start the pipeline
     pipeline.set_state(Gst.State.PLAYING)
     start_time = time.perf_counter()
-    
+    print("pipeline 2 started")
     # Convert from I420 to h264
     def write_video_pyav(frames, output_file):
         container = av.open(output_file, mode="w")
