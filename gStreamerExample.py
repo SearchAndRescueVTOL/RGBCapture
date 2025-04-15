@@ -79,7 +79,7 @@ def gstream(folder, frame_limit, dual):
             (height * 3 // 2, width)
         )
         buf.unmap(map_info)
-        
+        print("gathered data")
         # Process the frame
         frame_buff.append(frame_data)
         frame_count += 1
