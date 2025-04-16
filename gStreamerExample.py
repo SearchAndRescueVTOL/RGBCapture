@@ -33,8 +33,7 @@ def gstream(folder, frame_limit, dual):
     
     # GStreamer pipelines to capture video frames and portentially display with Wayland
     single_pipeline_description = """
-    v4l2src device=/dev/video0 ! framerate=60/1, width=640, height=512, format=GRAY16_LE !
-    appsink name=sink 
+    v4l2src device=/dev/video0 ! videoconvert ! framerate=60/1, width=640, height=512, format=GRAY16_LE ! appsink name=sink 
     """
     
     dual_pipeline_description = """
