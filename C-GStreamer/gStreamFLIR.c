@@ -14,8 +14,8 @@ int main(int argc, char *argv[]) {
     GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
 
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
-    
-    g_usleep(10000000); // 10 seconds
+
+    g_usleep(15000000); // 15 seconds
 
     GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
     if (!sample) {
