@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
     // Give the pipeline time to warm up
-    g_usleep(1000000); // 1 second
+    g_usleep(10000000); // 1 second
 
     GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
     if (!sample) {
