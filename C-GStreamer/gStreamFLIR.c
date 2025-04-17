@@ -28,10 +28,11 @@ void aFunction(int gpio, int level, uint32_t tick) {
         GstBuffer *buffer = gst_sample_get_buffer(sample);
         GstMapInfo map;
         if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+            char filename[20];
+            snprintf(filename, sizeof(filename), "capture%d.txt", trigger_counter);
             GstClockTime pts = GST_BUFFER_PTS(buffer);
             double pts_seconds = (double)pts / GST_SECOND;
-            
-            fprintf(fd, "%d \n", time_in_seconds + pts_seconds);
+            fprintf(fd, "%f \n", time_in_seconds + pts_seconds);
             fflush(fd);
             FILE *out = fopen("capture.raw", "wb");
             fwrite(map.data, 1, map.size, out);
@@ -113,8 +114,8 @@ int main(int argc, char *argv[]) {
     }
     int mode;
     gpioWaveClear();
-    gpioSetMode(27, PI_INPUT); // for gpio pin 4 (broadcom numbered)
-    gpioSetAlertFunc(27, aFunction);  // for GPIO pin 4
+    gpioSetMode(17, PI_INPUT); // for gpio pin 4 (broadcom numbered)
+    gpioSetAlertFunc(17, aFunction);  // for GPIO pin 4
     while(1){ // maybe not needed depending on how the call back works (if it creates a seperate thread for the callback on gpio or not)
         pause();
     }
