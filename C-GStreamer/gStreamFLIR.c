@@ -12,7 +12,11 @@ int main(int argc, char *argv[]) {
         "appsink name=sink", NULL);
 
     GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
-
+    g_object_set(G_OBJECT(appsink),
+        "drop", TRUE,
+        "max-buffers", 1,
+        "sync", FALSE,
+        NULL);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
     g_usleep(1000000); // 1 second
