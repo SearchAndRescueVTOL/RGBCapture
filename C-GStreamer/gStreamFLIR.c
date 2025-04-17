@@ -14,9 +14,8 @@ int main(int argc, char *argv[]) {
     GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
 
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
-
-    // Give the pipeline time to warm up
-    g_usleep(10000000); // 1 second
+    
+    g_usleep(10000000); // 10 seconds
 
     GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
     if (!sample) {
@@ -27,6 +26,8 @@ int main(int argc, char *argv[]) {
     GstBuffer *buffer = gst_sample_get_buffer(sample);
     GstMapInfo map;
     if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+        GstClockTime pts = GST_BUFFER_PTS(buffer);
+        g_print("Frame PTS: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(pts));
         FILE *out = fopen("capture.raw", "wb");
         fwrite(map.data, 1, map.size, out);
         fclose(out);
