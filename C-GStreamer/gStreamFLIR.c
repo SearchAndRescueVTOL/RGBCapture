@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
         GstClockTime pts = GST_BUFFER_PTS(buffer);
         g_print("Frame PTS: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(pts));
-        FILE *out = fopen("capture.raw", "wb");
+        FILE *out = fopen("capture2.raw", "wb");
         fwrite(map.data, 1, map.size, out);
         fclose(out);
         g_print("Frame captured to capture.raw (%zu bytes)\n", map.size);
