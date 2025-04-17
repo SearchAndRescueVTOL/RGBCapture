@@ -15,7 +15,12 @@ int main(int argc, char *argv[]) {
 
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    g_usleep(15000000); // 15 seconds
+    g_usleep(1000000); // 1 second
+    for (int i = 0; i < 4; i++) {
+        GstSample *flush_sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
+        if (flush_sample) gst_sample_unref(flush_sample);
+        g_print("Flushed frame %d\n", i + 1);
+    }
 
     GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
     if (!sample) {
