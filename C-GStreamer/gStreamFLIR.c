@@ -2,7 +2,10 @@
 #include <gst/app/gstappsink.h>
 #include <stdio.h>
 #include <string.h>
-
+#include <stdbool.h>
+#include <pigpio.h>
+#define DEFAULT_SAMPLE_RATE 1
+#define OUTPUT_FILE_NAME "output.txt"
 int main(int argc, char *argv[]) {
     gst_init(&argc, &argv);
 
@@ -13,13 +16,13 @@ int main(int argc, char *argv[]) {
 
     GstElement *appsink = gst_bin_get_by_name(GST_BIN(pipeline), "sink");
     g_object_set(G_OBJECT(appsink),
-        "drop", TRUE,
-        "max-buffers", 1,
-        "sync", FALSE,
-        NULL);
+             "drop", TRUE,
+             "max-buffers", 1,
+             "sync", FALSE,
+             NULL);
     gst_element_set_state(pipeline, GST_STATE_PLAYING);
 
-    g_usleep(1000000); // 1 second
+    g_usleep(10000000); // 1 second
     for (int i = 0; i < 4; i++) {
         GstSample *flush_sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
         if (flush_sample) gst_sample_unref(flush_sample);
