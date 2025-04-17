@@ -39,7 +39,23 @@ int main(int argc, char *argv[]) {
         g_print("Frame captured to capture.raw (%zu bytes)\n", map.size);
         gst_buffer_unmap(buffer, &map);
     }
+    g_usleep(10000000); // 10 second
+    sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
+    if (!sample) {
+        g_printerr("Failed to capture sample\n");
+        return -1;
+    }
 
+    buffer = gst_sample_get_buffer(sample);
+    if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
+        pts = GST_BUFFER_PTS(buffer);
+        g_print("Frame PTS: %" GST_TIME_FORMAT "\n", GST_TIME_ARGS(pts));
+        out = fopen("capture.raw", "wb");
+        fwrite(map.data, 1, map.size, out);
+        fclose(out);
+        g_print("Frame captured to capture.raw (%zu bytes)\n", map.size);
+        gst_buffer_unmap(buffer, &map);
+    }
     gst_sample_unref(sample);
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(appsink);
