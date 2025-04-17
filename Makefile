@@ -2,7 +2,7 @@
 .PHONY: all clean
 
 # The program to build
-NAME       := RGBCapture
+NAME       := RGBCaptureAndDisplay
 
 # Installation directories for pylon
 PYLON_ROOT ?= /opt/pylon
