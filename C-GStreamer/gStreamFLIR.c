@@ -22,14 +22,14 @@ void aFunction(int gpio, int level, uint32_t tick) {
         GstSample *sample = gst_app_sink_pull_sample(GST_APP_SINK(appsink));
         if (!sample) {
             g_printerr("Failed to capture sample\n");
-            return -1;
+            return;
         }
 
         GstBuffer *buffer = gst_sample_get_buffer(sample);
         GstMapInfo map;
         if (gst_buffer_map(buffer, &map, GST_MAP_READ)) {
             char filename[20];
-            snprintf(filename, sizeof(filename), "capture%d.txt", trigger_counter);
+            snprintf(filename, sizeof(filename), "capture%lld.txt", trigger_counter);
             GstClockTime pts = GST_BUFFER_PTS(buffer);
             double pts_seconds = (double)pts / GST_SECOND;
             fprintf(fd, "%f \n", time_in_seconds + pts_seconds);
