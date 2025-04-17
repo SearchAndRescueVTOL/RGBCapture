@@ -40,6 +40,7 @@ void aFunction(int gpio, int level, uint32_t tick) {
             g_print("Frame captured to capture.raw (%zu bytes)\n", map.size);
             gst_buffer_unmap(buffer, &map);
         }
+        gst_sample_unref(sample);
         trigger_counter += 1;
         
     }
@@ -136,7 +137,6 @@ int main(int argc, char *argv[]) {
     //     g_print("Frame captured to capture.raw (%zu bytes)\n", map.size);
     //     gst_buffer_unmap(buffer, &map);
     // }
-    gst_sample_unref(sample);
     gst_element_set_state(pipeline, GST_STATE_NULL);
     gst_object_unref(appsink);
     gst_object_unref(pipeline);
