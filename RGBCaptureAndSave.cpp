@@ -1,6 +1,6 @@
 // save_triggered_frames.cpp
 
-#include <pylon/pylonIncludes.h>
+#include <pylon/PylonIncludes.h>
 #include <pylon/BaslerUniversalInstantCamera.h>
 #include <opencv2/opencv.hpp>
 #include <iomanip>    // for std::setfill, std::setw
