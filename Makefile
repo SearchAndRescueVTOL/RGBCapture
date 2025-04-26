@@ -11,7 +11,7 @@ LD         := $(CXX)
 CPPFLAGS := -I$(PYLON_ROOT)/include \
             $(shell $(PYLON_ROOT)/bin/pylon-config --cflags) \
             $(shell pkg-config --cflags opencv4)
-CXXFLAGS   := # e.g., -g -O0 for debugging
+CXXFLAGS   := -g -lmosquitto # e.g., -g -O0 for debugging
 LDFLAGS    := $(shell $(PYLON_ROOT)/bin/pylon-config --libs-rpath)
 LDLIBS     := $(shell $(PYLON_ROOT)/bin/pylon-config --libs) \
               $(shell pkg-config --libs opencv4)

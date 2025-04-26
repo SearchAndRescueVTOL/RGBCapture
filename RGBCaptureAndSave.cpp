@@ -5,12 +5,28 @@
 #include <opencv2/opencv.hpp>
 #include <iomanip>    // for std::setfill, std::setw
 #include <sstream>    // for std::ostringstream
-
+extern "C"{
+#include <mosquitto.h>
+}
+struct mosquitto *mosq;
+int rc;
+#define MQTT_HOST "localhost"
+#define MQTT_PORT 1883
+#define MQTT_TOPIC "RGB/logs"
 using namespace Pylon;
 using namespace GenApi;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
-
+int log_to_mosq(char *msg){
+	rc = mosquitto_publish(mosq, NULL, MQTT_TOPIC, strlen(msg), msg, 0, false);
+	if (rc != MOSQ_ERR_SUCCESS){
+		cout << "Failed to log over mosquitto!\n" << endl;
+		return -1;
+	}
+	else{
+		return 0;
+	}
+}
 int main()
 {
     // Initialize Pylon runtime before using any Pylon methods
@@ -64,6 +80,7 @@ int main()
 
                 // Build filename "frame000.tiff", "frame001.tiff", …
                 ostringstream ss;
+		ss << "/mnt/external/RGB/";
                 ss << "frame" << setfill('0') << setw(3) << frameIndex++ << ".tiff";
                 string filename = ss.str();
 
@@ -72,9 +89,14 @@ int main()
                 {
                     cerr << "ERROR: Could not write image to " << filename << endl;
                     break;
-                }
-                cout << "Saved " << filename << endl;
 
+                }
+		string temp = "Saved " + filename;
+		char * buff = new char[temp.size() + 1];
+		strcpy(buff, temp.c_str());
+		log_to_mosq(buff);
+                cout << "Saved " << filename << endl;
+		delete[] buff;
                 // If you want only the first frame, uncomment:
                 // break;
             }
