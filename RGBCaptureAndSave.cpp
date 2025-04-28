@@ -5,12 +5,15 @@
 #include <opencv2/opencv.hpp>
 #include <iomanip>    // for std::setfill, std::setw
 #include <sstream>    // for std::ostringstream
-
+#include <chrono>
+#include <ctime>
+#include <iostream>
 using namespace Pylon;
 using namespace GenApi;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
 
+#define SAVE_DIR "/mnt/external/RGB/"
 int main()
 {
     // Initialize Pylon runtime before using any Pylon methods
@@ -63,18 +66,31 @@ int main()
                 cv::cvtColor(img, img, cv::COLOR_BayerRG2RGB);
 
                 // Build filename "frame000.tiff", "frame001.tiff", …
+                auto now = chrono::system_clock::now();
+                time_t now_c = chrono::system_clock::to_time_t(now);
+                tm* now_tm = localtime(&now_c);
+
                 ostringstream ss;
-                ss << "frame" << setfill('0') << setw(3) << frameIndex++ << ".tiff";
+                ss << SAVE_DIR
+                << setfill('0')
+                << setw(2) << now_tm->tm_mon + 1 << "_"
+                << setw(2) << now_tm->tm_mday << "_"
+                << (now_tm->tm_year + 1900) << "_"
+                << setw(2) << now_tm->tm_hour << "_"
+                << setw(2) << now_tm->tm_min << "_"
+                << setw(2) << now_tm->tm_sec
+                << "_frame" << setw(3) << frameIndex++
+                << ".tiff";
+
                 string filename = ss.str();
 
                 // Save to TIFF
-                if ( !cv::imwrite( filename, img ) )
+                if (!cv::imwrite(filename, img))
                 {
                     cerr << "ERROR: Could not write image to " << filename << endl;
                     break;
                 }
-                cout << "Saved " << filename << endl;
-
+                cout << "Saved " << filename << " at time: " << ctime(&now_c) << endl;
                 // If you want only the first frame, uncomment:
                 // break;
             }
