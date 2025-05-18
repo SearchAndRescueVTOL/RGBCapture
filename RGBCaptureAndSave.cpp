@@ -5,20 +5,55 @@
 #include <opencv2/opencv.hpp>
 #include <iomanip>    // for std::setfill, std::setw
 #include <sstream>    // for std::ostringstream
+#include <fstream>
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <filesystem>
 using namespace Pylon;
 using namespace GenApi;
 using namespace std;
 using namespace Basler_UniversalCameraParams;
+std::string getFormattedTimestamp() {
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    std::time_t now_time_t = system_clock::to_time_t(now);
+    std::tm now_tm = *std::localtime(&now_time_t);
+    auto duration = now.time_since_epoch();
+    auto millis = duration_cast<milliseconds>(duration).count() % 1000;
+    int hundredths = millis / 10;
+    std::ostringstream oss;
+    oss << std::setw(2) << std::setfill('0') << now_tm.tm_mon + 1 << "_"
+        << std::setw(2) << std::setfill('0') << now_tm.tm_mday << "_"
+        << now_tm.tm_year + 1900 << "_"
+        << std::setw(2) << std::setfill('0') << now_tm.tm_hour << "_"
+        << std::setw(2) << std::setfill('0') << now_tm.tm_min << "_"
+        << std::setw(2) << std::setfill('0') << now_tm.tm_sec << "_"
+        << std::setw(2) << std::setfill('0') << hundredths;
 
-#define SAVE_DIR "/mnt/external/RGB/"
+    return oss.str();
+}
+
 int main()
 {
     // Initialize Pylon runtime before using any Pylon methods
     PylonInitialize();
     int exitCode = 0;
+    string SAVE_DIR = "/mnt/external/RGB/" + getFormattedTimestamp();
+    if (!std::filesystem::exists(SAVE_DIR)){
+        if (!std::filesystem::create_directory(SAVE_DIR)) {
+            // std::cout << "Directory created: " << SAVE_DIR << std::endl;
+            cerr << "Failed to create directory!" << endl;
+            PylonTerminate();
+            return 1;
+        } 
+    }
+    string logFileName = getFormattedTimestamp() + ".txt"; 
+    std::ofstream logfile(logFileName, std::ios::app);
+    if (!logfile) {
+        std::cerr << "Failed to open or create file: " << logFileName << std::endl;
+        return 1;
+    }
 
     try
     {
@@ -72,14 +107,7 @@ int main()
 
                 ostringstream ss;
                 ss << SAVE_DIR
-                << setfill('0')
-                << setw(2) << now_tm->tm_mon + 1 << "_"
-                << setw(2) << now_tm->tm_mday << "_"
-                << (now_tm->tm_year + 1900) << "_"
-                << setw(2) << now_tm->tm_hour << "_"
-                << setw(2) << now_tm->tm_min << "_"
-                << setw(2) << now_tm->tm_sec
-                << "_frame" << setw(3) << frameIndex++
+                << getFormattedTimestamp() << "_rgb_#" << setw(3) << frameIndex++
                 << ".tiff";
 
                 string filename = ss.str();
@@ -90,7 +118,8 @@ int main()
                     cerr << "ERROR: Could not write image to " << filename << endl;
                     break;
                 }
-                cout << "Saved " << filename << " at time: " << ctime(&now_c) << endl;
+                cout << "Saved " << filename << endl;
+                logfile << "Saved " << filename << endl;
                 // If you want only the first frame, uncomment:
                 // break;
             }
@@ -112,7 +141,7 @@ int main()
         cerr << "An exception occurred: " << e.GetDescription() << endl;
         exitCode = 1;
     }
-
+    logfile.close();
     // Release Pylon resources
     PylonTerminate();
     return exitCode;
