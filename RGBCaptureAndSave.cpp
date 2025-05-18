@@ -39,7 +39,8 @@ int main()
     // Initialize Pylon runtime before using any Pylon methods
     PylonInitialize();
     int exitCode = 0;
-    string SAVE_DIR = "/mnt/external/RGB/" + getFormattedTimestamp();
+    string time = getFormattedTimestamp();
+    string SAVE_DIR = "/mnt/external/RGB/" + time;
     if (!std::filesystem::exists(SAVE_DIR)){
         if (!std::filesystem::create_directory(SAVE_DIR)) {
             // std::cout << "Directory created: " << SAVE_DIR << std::endl;
@@ -48,7 +49,7 @@ int main()
             return 1;
         } 
     }
-    string logFileName = getFormattedTimestamp() + ".txt"; 
+    string logFileName = time + ".txt"; 
     std::ofstream logfile(logFileName, std::ios::app);
     if (!logfile) {
         std::cerr << "Failed to open or create file: " << logFileName << std::endl;
@@ -107,7 +108,7 @@ int main()
 
                 ostringstream ss;
                 ss << SAVE_DIR
-                << getFormattedTimestamp() << "_rgb_#" << setw(3) << frameIndex++
+                << "/" << getFormattedTimestamp() << "_rgb_#" << frameIndex++
                 << ".tiff";
 
                 string filename = ss.str();
