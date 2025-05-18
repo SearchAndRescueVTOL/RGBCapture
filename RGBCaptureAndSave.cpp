@@ -49,7 +49,7 @@ int main()
             return 1;
         } 
     }
-    string logFileName = time + ".txt"; 
+    string logFileName = "logs/" + time + ".txt"; 
     std::ofstream logfile(logFileName, std::ios::app);
     if (!logfile) {
         std::cerr << "Failed to open or create file: " << logFileName << std::endl;
@@ -70,10 +70,30 @@ int main()
         camera.TriggerSource.SetValue( TriggerSource_Line3 );          // use Line3 for external trigger
         camera.TriggerActivation.SetValue( TriggerActivation_RisingEdge );
         // --------------------------------
-
+        
         // Continuous acquisition mode
         camera.AcquisitionMode.SetValue( AcquisitionMode_Continuous );
-
+        // Camera Parameters (gain/exposure)
+        double gainLowerLimit = 0.0;
+        double gainUpperLimit = 6.54;
+        double exposureLowerLimit = 10.0;
+        double exposureUpperLimit = 100000;
+        camera.AutoExposureTimeLowerLimit.SetValue(exposureLowerLimit);
+        camera.AutoExposureTimeUpperLimit.SetValue(exposureUpperLimit);
+        camera.AutoTargetBrightness.SetValue(0.5);
+        camera.ExposureAuto.SetValue(ExposureAuto_Continuous);
+        camera.AutoGainLowerLimit.SetValue(gainLowerLimit);
+        camera.AutoGainUpperLimit.SetValue(gainUpperLimit);
+        camera.GainAuto.SetValue(GainAuto_Continuous);
+        // Auto target brightness 0.5 
+        // Auto function minimize gain
+        // Gain lower limit 0
+        // Gain upper limit 6.54
+        // Exposure time lower limit 10
+        // Exposure time upper limit 100000
+        
+        // End camera parameters
+        
         // Use the LatestImageOnly strategy so we always get the newest frame
         camera.StartGrabbing( GrabStrategy_LatestImageOnly );
 
