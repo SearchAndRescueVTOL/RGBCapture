@@ -84,14 +84,14 @@ int main()
         camera.ExposureAuto.SetValue(ExposureAuto_Continuous);
         camera.AutoGainLowerLimit.SetValue(gainLowerLimit);
         camera.AutoGainUpperLimit.SetValue(gainUpperLimit);
-        camera.GainAuto.SetValue(GainAuto_Continuous);
+        camera.GainAuto.SetValue( GainAuto_Continuous );
         // Auto target brightness 0.5 
         // Auto function minimize gain
         // Gain lower limit 0
         // Gain upper limit 6.54
         // Exposure time lower limit 10
         // Exposure time upper limit 100000
-        
+
         // End camera parameters
         
         // Use the LatestImageOnly strategy so we always get the newest frame
@@ -122,10 +122,9 @@ int main()
                 cv::cvtColor(img, img, cv::COLOR_BayerRG2RGB);
 
                 // Build filename "frame000.tiff", "frame001.tiff", …
-                auto now = chrono::system_clock::now();
-                time_t now_c = chrono::system_clock::to_time_t(now);
-                tm* now_tm = localtime(&now_c);
-
+                // auto now = chrono::system_clock::now();
+                // time_t now_c = chrono::system_clock::to_time_t(now);
+                // tm* now_tm = localtime(&now_c);
                 ostringstream ss;
                 ss << SAVE_DIR
                 << "/" << getFormattedTimestamp() << "_rgb_#" << frameIndex++

@@ -1,7 +1,7 @@
 .PHONY: all clean
 
 # Program names
-PROGRAMS   := RGBCaptureAndDisplay RGBCaptureAndSave
+PROGRAMS   := RGBCaptureAndSave
 
 # Installation directories for pylon
 PYLON_ROOT ?= /opt/pylon
