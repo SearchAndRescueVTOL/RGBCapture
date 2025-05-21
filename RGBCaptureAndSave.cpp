@@ -85,6 +85,8 @@ int main() {
     camera.AutoGainLowerLimit.SetValue(gainLowerLimit);
     camera.AutoGainUpperLimit.SetValue(gainUpperLimit);
     camera.GainAuto.SetValue(GainAuto_Continuous);
+    camera.AutoFunctionROISelector.SetValue(AutoFunctionROISelector_ROI1);
+    camera.AutoFunctionROIUseBrightness.SetValue(true);
     // Auto target brightness 0.5
     // Auto function minimize gain
     // Gain lower limit 0
@@ -125,7 +127,7 @@ int main() {
 
         // Build filename "frame000.tiff", "frame001.tiff", …
         // auto now = chrono::system_clock::now();
-        // time_t now_c = chrono::system_clock::to_time_t(now);
+        // time_t now_c = chrono::s/MicroXRCE/////ystem_clock::to_time_t(now);
         // tm* now_tm = localtime(&now_c);
         ostringstream ss;
         ss << SAVE_DIR << "/" << getFormattedTimestamp() << "_rgb_#"
