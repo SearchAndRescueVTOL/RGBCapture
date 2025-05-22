@@ -39,7 +39,7 @@ int main() {
   PylonInitialize();
   int exitCode = 0;
   string time = getFormattedTimestamp();
-  string SAVE_DIR = "/mnt/external/RGB/" + time;
+  string SAVE_DIR = "/home/sarv-pi/RGB/" + time;
   if (!std::filesystem::exists(SAVE_DIR)) {
     if (!std::filesystem::create_directory(SAVE_DIR)) {
       // std::cout << "Directory created: " << SAVE_DIR << std::endl;
