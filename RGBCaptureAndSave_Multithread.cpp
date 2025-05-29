@@ -11,13 +11,14 @@
 #include <iostream>
 #include <filesystem>
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <atomic>
 #include <queue>
 #include <vector>
 #include <optional>
-
+#include <pthread.h>
+#include <sched.h>
+#include <cstring>
+#include <cerrno>
 using namespace Pylon;
 using namespace Basler_UniversalCameraParams;
 using namespace GenApi;
@@ -55,11 +56,9 @@ public:
 
     std::optional<std::string> pop() {
         size_t index = head.load(std::memory_order_relaxed) % LOG_QUEUE_SIZE;
-
         if (!slots[index].flag.load(std::memory_order_acquire)) {
             return std::nullopt;
         }
-
         std::string result = std::move(slots[index].value);
         slots[index].flag.store(false, std::memory_order_release);
         head.fetch_add(1, std::memory_order_relaxed);
@@ -170,6 +169,7 @@ void loggerThreadFunc(LogQueue& logQueue, std::ofstream& logfile, std::atomic<bo
         auto msg = logQueue.pop();
         if (msg) {
             logfile << *msg << std::endl;
+            cout << *msg << std::endl;
         } else {
             if (done.load() && logQueue.empty()) {
                 break;
@@ -185,17 +185,20 @@ void loggerThreadFunc(LogQueue& logQueue, std::ofstream& logfile, std::atomic<bo
 
 int main() {
   // Initialize Pylon runtime before using any Pylon methods
-  PylonInitialize();
-  int exitCode = 0;
-  string time = getFormattedTimestamp();
-  string SAVE_DIR = "/home/sarv-pi/RGB/" + time;
-  if (!std::filesystem::exists(SAVE_DIR)) {
-    if (!std::filesystem::create_directory(SAVE_DIR)) {
-      cerr << "Failed to create directory!" << endl;
-      PylonTerminate();
-      return 1;
+
+
+
+    PylonInitialize();
+    int exitCode = 0;
+    string time = getFormattedTimestamp();
+    string SAVE_DIR = "/home/sarv-pi/RGB/" + time;
+    if (!std::filesystem::exists(SAVE_DIR)) {
+        if (!std::filesystem::create_directory(SAVE_DIR)) {
+        cerr << "Failed to create directory!" << endl;
+        PylonTerminate();
+        return 1;
+        }
     }
-  }
   string logFileName = "logs/" + time + ".txt";
   std::ofstream logfile(logFileName, std::ios::app);
   if (!logfile) {
@@ -203,6 +206,8 @@ int main() {
     return 1;
   }
   atomic<bool> done{false};
+  std::thread logger;
+  std::vector<std::thread> writers;
   try {
     // Create an instant camera object with the first found device
     CBaslerUniversalInstantCamera camera(
@@ -252,9 +257,21 @@ int main() {
 
     cout << "Waiting for hardware trigger on Line3. Saving each frame as TIFF..."
         << endl;
-    std::thread logger(loggerThreadFunc, ref(logQueue), ref(logfile), ref(done));
-    std::thread writer1(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
-    std::thread writer2(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
+    logger = std::thread(loggerThreadFunc, ref(logQueue), ref(logfile), ref(done));
+    for(int i=0; i < 5; i++){
+        writers.emplace_back(std::thread(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue)));
+    }
+    pthread_t main_thread = pthread_self();
+    int policy = SCHED_FIFO;
+    sched_param sch_params; 
+    sch_params.sched_priority = sched_get_priority_max(policy);
+    if (pthread_setschedparam(main_thread, policy, &sch_params) != 0) {
+        std::cerr << "Failed to set main thread priority: " << strerror(errno) << std::endl;
+    } else {
+        std::cout << "Main thread priority set to max (" << sch_params.sched_priority << ") under policy SCHED_RR" << std::endl;
+    }
+    // std::thread writer1(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
+    // std::thread writer2(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
     
     CGrabResultPtr ptrGrabResult;
     int frameIndex = 0;
@@ -278,18 +295,33 @@ int main() {
              << "): " << ptrGrabResult->GetErrorDescription() << endl;
         }
     }
-
+    done.store(true);
+    for (auto& t : writers) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    if (logger.joinable()){
+        logger.join();
+    }
     camera.StopGrabbing();
     camera.Close();
-  } catch (const GenericException &e) {
-    // Error handling
-    cerr << "An exception occurred: " << e.GetDescription() << endl;
-    exitCode = 1;
-  }
-  done.store(true);
-  logfile.close();
-  // Release Pylon resources
-  PylonTerminate();
-  return exitCode;
+    } catch (const GenericException &e) {
+        // Error handling
+        cerr << "An exception occurred: " << e.GetDescription() << endl;
+        exitCode = 1;
+    }
+    done.store(true);
+    for (auto& t : writers) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    if (logger.joinable()){
+        logger.join();
+    }
+    logfile.close();
+    PylonTerminate();
+    return exitCode;
 }
 
