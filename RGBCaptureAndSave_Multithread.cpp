@@ -258,13 +258,13 @@ int main() {
     cout << "Waiting for hardware trigger on Line3. Saving each frame as TIFF..."
         << endl;
     logger = std::thread(loggerThreadFunc, ref(logQueue), ref(logfile), ref(done));
-    for(int i=0; i < 5; i++){
+    for(int i=0; i < 3; i++){
         writers.emplace_back(std::thread(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue)));
     }
     pthread_t main_thread = pthread_self();
     int policy = SCHED_FIFO;
     sched_param sch_params; 
-    sch_params.sched_priority = sched_get_priority_max(policy);
+    sch_params.sched_priority = 25;
     if (pthread_setschedparam(main_thread, policy, &sch_params) != 0) {
         std::cerr << "Failed to set main thread priority: " << strerror(errno) << std::endl;
     } else {
