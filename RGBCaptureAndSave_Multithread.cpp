@@ -258,25 +258,25 @@ int main() {
     cout << "Waiting for hardware trigger on Line3. Saving each frame as TIFF..."
         << endl;
     logger = std::thread(loggerThreadFunc, ref(logQueue), ref(logfile), ref(done));
-    for(int i=0; i < 3; i++){
+    for(int i=0; i < 1; i++){
         writers.emplace_back(std::thread(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue)));
     }
-    pthread_t main_thread = pthread_self();
-    int policy = SCHED_FIFO;
-    sched_param sch_params; 
-    sch_params.sched_priority = 25;
-    if (pthread_setschedparam(main_thread, policy, &sch_params) != 0) {
-        std::cerr << "Failed to set main thread priority: " << strerror(errno) << std::endl;
-    } else {
-        std::cout << "Main thread priority set to max (" << sch_params.sched_priority << ") under policy SCHED_RR" << std::endl;
-    }
-    // std::thread writer1(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
-    // std::thread writer2(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
+    // pthread_t main_thread = pthread_self();
+    // int policy = SCHED_FIFO;
+    // sched_param sch_params; 
+    // sch_params.sched_priority = 99;
+    // if (pthread_setschedparam(main_thread, policy, &sch_params) != 0) {
+    //     std::cerr << "Failed to set main thread priority: " << strerror(errno) << std::endl;
+    // } else {
+    //     std::cout << "Main thread priority set to max (" << sch_params.sched_priority << ") under policy SCHED_RR" << std::endl;
+    // }
+    std::thread writer1(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
+    std::thread writer2(writerThreadFunc, ref(imageQueue), SAVE_DIR, ref(done), ref(logQueue));
     
     CGrabResultPtr ptrGrabResult;
     int frameIndex = 0;
     while (camera.IsGrabbing()) {
-        camera.RetrieveResult(5000, ptrGrabResult, TimeoutHandling_ThrowException);
+        camera.RetrieveResult(10000, ptrGrabResult, TimeoutHandling_ThrowException);
         if (ptrGrabResult->GrabSucceeded()) {
             cv::Mat img(ptrGrabResult->GetHeight(), ptrGrabResult->GetWidth(), CV_8UC1, const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(ptrGrabResult->GetBuffer())));
             cv::cvtColor(img, img, cv::COLOR_BayerRG2RGB);
